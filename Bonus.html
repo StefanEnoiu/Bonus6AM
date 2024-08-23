@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procent Target Vânzări & Grafic Vânzări</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: url('https://image-url-for-macbook-background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px;
+            text-align: center;
+        }
+
+        h1,
+        h2 {
+            font-size: 24px;
+            color: #6A1B9A;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        label,
+        input {
+            display: block;
+            margin: 10px 0;
+            font-size: 18px;
+            color: #4A148C;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 2px solid #4A148C;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .target-box {
+            background-color: #F3E5F5;
+            border: 2px solid #7B1FA2;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .level-name {
+            font-weight: bold;
+            font-size: 20px;
+            color: #6A1B9A;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            margin: 10px 0;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress {
+            height: 30px;
+            width: 0;
+            background-color: #4CAF50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+            font-weight: bold;
+            transition: width 0.5s ease;
+            border-radius: 5px;
+        }
+
+        .remaining,
+        .average-needed,
+        .probability {
+            font-size: 16px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .remaining,
+        .average-needed {
+            color: #D32F2F;
+        }
+
+        .probability {
+            color: #8E24AA;
+        }
+
+        .days-percentage {
+            font-size: 18px;
+            color: #4A148C;
+            font-weight: bold;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .days-percentage-container {
+            background-color: #EDE7F6;
+            border: 2px solid #7B1FA2;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .back-button,
+        .next-button {
+            background-color: #4A148C;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+            margin: 10px auto;
+            display: block;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        canvas {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Pagina 1 -->
+        <div class="container page-1">
+            <h1>Procent Target Vânzări</h1>
+            <label for="username">Nume vânzător:</label>
+            <input type="text" id="username" placeholder="Introdu numele tău" oninput="updateUsername()">
+
+            <label for="workedDays">Număr zile lucrate:</label>
+            <input type="number" id="workedDays" placeholder="Introdu numărul de zile lucrate" oninput="updateProgress()">
+
+            <label for="totalWorkingDays">Număr total zile lucrătoare:</label>
+            <input type="number" id="totalWorkingDays" placeholder="Introdu numărul total de zile lucrătoare" oninput="updateProgress()">
+
+            <label for="totalSales">Total vânzări:</label>
+            <input type="number" id="totalSales" placeholder="Introdu totalul vânzărilor" oninput="updateProgress()">
+
+            <!-- Afișarea procentului zilelor lucrate -->
+            <div class="days-percentage-container">
+                <div id="daysPercentage" class="days-percentage"></div>
+            </div>
+
+            <div id="progressBars"></div>
+
+            <button class="next-button" onclick="showPage(2)">Vezi Grafic Vânzări</button>
+        </div>
+
+        <!-- Pagina 2 -->
+        <div class="container page-2">
+            <h2>Grafic Vânzări</h2>
+            <canvas id="salesChart"></canvas>
+            <button class="back-button" onclick="showPage(1)">Înapoi la Procent Target Vânzări</button>
+        </div>
+    </div>
+
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Pragurile pentru fiecare nivel
+        const levels = [
+            { name: "Nivel 1", target: 59000, reward: "200 lei", message: "Felicitări!" },
+            { name: "Nivel 2", target: 64000, reward: "340 lei", message: "Încearcă din nou!" },
+            { name: "Nivel 3", target: 69000, reward: "470 lei", message: "Mai ai puțin!" },
+            { name: "Nivel 4", target: 78000, reward: "600 lei", message: "Continuă așa!" },
+            { name: "Nivel 5", target: 89000, reward: "690 lei", message: "Fii perseverent!" },
+            { name: "Nivel 6", target: 98000, reward: "820 lei", message: "Poți reuși!" },
+            { name: "Nivel 7", target: 108000, reward: "1000 lei", message: "Ești pe drumul cel bun!" },
+            { name: "Nivel 8", target: 117000, reward: "1200 lei", message: "Fii optimist!" },
+            { name: "Nivel 9", target: 126000, reward: "1430 lei", message: "Îți lipsește puțin!" },
+            { name: "Nivel 10", target: 135000, reward: "1700 lei", message: "Nu te opri acum!" },
+            { name: "Nivel 11", target: 139500, reward: "1900 lei", message: "Ești aproape acolo!" },
+            { name: "Nivel 12", target: 150000, reward: "2300 lei", message: "Nu renunța! Mai ai puțin!" }
+        ];
+
+        function updateProgress() {
+            const totalSales = parseFloat(document.getElementById('totalSales').value) || 0;
+            const workedDays = parseFloat(document.getElementById('workedDays').value) || 0;
+            const totalWorkingDays = parseFloat(document.getElementById('totalWorkingDays').value) || 0;
+            const remainingDays = totalWorkingDays - workedDays;
+
+            // Calculul procentului zilelor lucrate
+            const daysPercentage = workedDays / totalWorkingDays * 100;
+            document.getElementById('daysPercentage').textContent = `Procent zile lucrate: ${daysPercentage.toFixed(2)}%`;
+
+            levels.forEach(level => {
+                const progressElement = document.getElementById(level.name.replace(" ", "-"));
+                const remainingElement = document.getElementById(`${level.name.replace(" ", "-")}-remaining`);
+                const averageElement = document.getElementById(`${level.name.replace(" ", "-")}-average`);
+                const probabilityElement = document.getElementById(`${level.name.replace(" ", "-")}-probability`);
+
+                // Calcularea procentului de vânzări realizate pentru fiecare target
+                const percentage = Math.min((totalSales / level.target) * 100, 100);
+                progressElement.style.width = `${percentage}%`;
+                progressElement.textContent = `${percentage.toFixed(2)}%`;
+
+                // Calcularea restului necesar pentru atingerea targetului
+                const remaining = level.target - totalSales;
+                if (remaining > 0) {
+                    remainingElement.textContent = `Rest pentru atingerea targetului: ${remaining.toFixed(2)} lei`;
+
+                    // Calcularea mediei zilnice necesare în zilele rămase
+                    if (remainingDays > 0) {
+                        const averageNeeded = remaining / remainingDays;
+                        averageElement.textContent = `Media zilnică necesară: ${averageNeeded.toFixed(2)} lei`;
+                    } else {
+                        averageElement.textContent = 'Nu mai sunt zile disponibile.';
+                    }
+
+                    probabilityElement.textContent = level.message; // Mesaj motivational
+                } else {
+                    remainingElement.textContent = `Target atins!`;
+                    averageElement.textContent = '';
+                    probabilityElement.textContent = "Felicitări!"; // Mesaj felicitari
+                }
+            });
+        }
+
+        function updateUsername() {
+            const username = document.getElementById('username').value.trim();
+            if (username) {
+                document.querySelector('h1').textContent = `Progres Vânzări - ${username}`;
+            } else {
+                document.querySelector('h1').textContent = 'Progres Vânzări';
+            }
+        }
+
+        // Generarea chenarului pentru fiecare target
+        const progressBarsContainer = document.getElementById('progressBars');
+        levels.forEach(level => {
+            const targetBox = document.createElement('div');
+            targetBox.className = 'target-box';
+
+            const levelName = document.createElement('div');
+            levelName.className = 'level-name';
+            levelName.textContent = `${level.name}: ${level.target} lei - ${level.reward}`;
+            targetBox.appendChild(levelName);
+
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-bar';
+            const progress = document.createElement('div');
+            progress.className = 'progress';
+            progress.id = level.name.replace(" ", "-");
+            progressBar.appendChild(progress);
+            targetBox.appendChild(progressBar);
+
+            const remaining = document.createElement('div');
+            remaining.className = 'remaining';
+            remaining.id = `${level.name.replace(" ", "-")}-remaining`;
+            targetBox.appendChild(remaining);
+
+            const averageNeeded = document.createElement('div');
+            averageNeeded.className = 'average-needed';
+            averageNeeded.id = `${level.name.replace(" ", "-")}-average`;
+            targetBox.appendChild(averageNeeded);
+
+            const probability = document.createElement('div');
+            probability.className = 'probability';
+            probability.id = `${level.name.replace(" ", "-")}-probability`;
+            targetBox.appendChild(probability);
+
+            progressBarsContainer.appendChild(targetBox);
+        });
+
+        // Funcție pentru comutarea între pagini
+        function showPage(pageNumber) {
+            document.querySelectorAll('.container').forEach(container => container.style.display = 'none');
+            document.querySelector(`.container.page-${pageNumber}`).style.display = 'block';
+            if (pageNumber === 2) {
+                renderSalesChart();
+            }
+        }
+
+        // Afișarea inițială a paginii 1
+        showPage(1);
+
+        // Renderizarea graficului pentru Pagina 2
+        function renderSalesChart() {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            const salesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 16 }, (_, i) => `Ziua ${i + 1}`), // Etichete pentru zile
+                    datasets: [{
+                        label: 'Vânzări Zilnice',
+                        data: Array.from({ length: 16 }, () => Math.floor(Math.random() * 20000)), // Date simulate
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                        fill: true,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Zile Lucrate'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Sume (lei)'
+                            },
+                            ticks: {
+                                stepSize: 1000,
+                                callback: function (value) {
+                                    return value.toLocaleString('ro-RO'); // Formatarea numerelor în stil românesc
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
